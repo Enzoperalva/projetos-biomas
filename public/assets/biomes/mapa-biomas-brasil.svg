@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 900 620" width="900" height="620" role="img" aria-labelledby="svg-title svg-desc">
+  <title id="svg-title">Mapa vetorial dos biomas brasileiros</title>
+  <desc id="svg-desc">Mapa esquemático do Brasil com seis regiões vetoriais separadas e interativas: Amazônia, Cerrado, Caatinga, Mata Atlântica, Pantanal e Pampa.</desc>
+  <metadata>
+    Arquivo SVG editável com seis caminhos independentes. A distribuição geral é ilustrativa e simplificada; os contornos deste desenho não constituem reprodução cartográfica oficial dos limites do IBGE em escala 1:250.000.
+  </metadata>
+  <style>
+    .bioma { cursor: pointer; stroke: #f8f6ed; stroke-width: 2.3; stroke-linejoin: round; stroke-linecap: round; transition: filter .16s ease, stroke-width .16s ease; }
+    .bioma:hover, .bioma:focus-visible { filter: brightness(1.08) saturate(1.13); stroke: #243b32; stroke-width: 3.2; outline: none; }
+    .bioma.selecionado { stroke: #203a30; stroke-width: 3.4; filter: brightness(1.03) saturate(1.08); }
+    .legenda-item { cursor: pointer; }
+    .legenda-item:hover text, .legenda-item:focus-visible text { fill: #0d4f3a; text-decoration: underline; outline: none; }
+    .legenda-item:focus-visible { outline: none; }
+    .titulo { font: 700 23px system-ui, -apple-system, sans-serif; letter-spacing: 1.3px; fill: #203a30; }
+    .subtitulo { font: 400 12px system-ui, -apple-system, sans-serif; fill: #5b6e63; }
+    .rotulo { font: 600 14px system-ui, -apple-system, sans-serif; fill: #25382f; }
+    .texto-info { font: 400 13px system-ui, -apple-system, sans-serif; fill: #43574d; }
+    .texto-pequeno { font: 400 10px system-ui, -apple-system, sans-serif; fill: #76867c; }
+  </style>
+
+  <!--
+    ATENÇÃO CARTOGRÁFICA: as formas abaixo são um desenho vetorial simplificado
+    para interface/prototipação, não limites oficiais georreferenciados.
+  -->
+  <g id="mapa" aria-label="Biomas do Brasil">
+    <path id="amazonia" class="bioma" tabindex="0" role="button" aria-pressed="false" aria-label="Amazônia" data-nome="Amazônia" data-info1="Floresta tropical úmida, grandes rios" data-info2="e enorme biodiversidade." fill="#2F855A"
+      d="M 278,48
+         C 310,38 343,42 371,55
+         C 391,65 407,79 425,91
+         C 444,104 459,121 473,139
+         C 480,150 486,160 484,168
+         C 463,172 444,181 428,193
+         C 406,204 386,208 367,217
+         C 348,226 330,249 313,266
+         C 294,285 270,300 245,308
+         C 221,315 204,309 183,301
+         C 177,320 173,343 169,366
+         C 157,349 143,330 138,313
+         C 127,298 114,285 104,267
+         C 95,247 84,228 82,210
+         C 82,197 94,187 107,175
+         C 120,164 128,151 143,139
+         C 157,127 172,118 188,108
+         C 211,91 235,69 259,56
+         C 266,52 272,49 278,48 Z">
+      <title>Amazônia — floresta tropical úmida, grandes rios e enorme biodiversidade.</title>
+    </path>
+
+    <path id="caatinga" class="bioma" tabindex="0" role="button" aria-pressed="false" aria-label="Caatinga" data-nome="Caatinga" data-info1="Vegetação adaptada ao clima semiárido" data-info2="do interior do Nordeste brasileiro." fill="#E7C56B"
+      d="M 428,193
+         C 444,181 463,172 484,168
+         C 489,179 480,198 469,219
+         C 462,230 451,241 439,247
+         C 420,247 402,238 386,230
+         C 378,225 372,221 367,217
+         C 386,208 406,204 428,193 Z">
+      <title>Caatinga — vegetação adaptada ao clima semiárido do interior do Nordeste.</title>
+    </path>
+
+    <path id="cerrado" class="bioma" tabindex="0" role="button" aria-pressed="false" aria-label="Cerrado" data-nome="Cerrado" data-info1="Savana tropical com estação seca marcada" data-info2="e árvores de troncos retorcidos." fill="#D6A84F"
+      d="M 245,308
+         C 270,300 294,285 313,266
+         C 330,249 348,226 367,217
+         C 378,225 386,230 402,238
+         C 420,247 439,247 439,247
+         C 419,256 397,267 381,278
+         C 366,297 358,318 354,338
+         C 351,360 360,385 372,403
+         C 353,412 329,419 306,416
+         C 280,431 272,454 267,478
+         C 256,496 246,482 233,465
+         C 221,448 213,431 202,414
+         C 190,398 177,383 169,366
+         C 173,345 178,322 183,301
+         C 204,309 221,315 245,308 Z">
+      <title>Cerrado — savana tropical com estação seca marcada e árvores de troncos retorcidos.</title>
+    </path>
+
+    <path id="mata-atlantica" class="bioma" tabindex="0" role="button" aria-pressed="false" aria-label="Mata Atlântica" data-nome="Mata Atlântica" data-info1="Florestas tropicais e subtropicais" data-info2="que acompanham boa parte do litoral." fill="#4F9B83"
+      d="M 469,219
+         C 475,231 472,244 464,258
+         C 458,275 447,289 440,307
+         C 432,323 431,340 421,356
+         C 414,373 403,391 394,407
+         C 383,428 373,449 358,467
+         C 349,483 339,495 334,509
+         L 334,478
+         C 311,482 288,475 267,478
+         C 272,454 280,431 306,416
+         C 329,419 353,412 372,403
+         C 360,385 351,360 354,338
+         C 358,318 366,297 381,278
+         C 397,267 419,256 439,247
+         C 454,241 465,231 469,219 Z">
+      <title>Mata Atlântica — florestas tropicais e subtropicais ao longo de boa parte do litoral.</title>
+    </path>
+
+    <path id="pantanal" class="bioma" tabindex="0" role="button" aria-pressed="false" aria-label="Pantanal" data-nome="Pantanal" data-info1="Grande planície sazonalmente inundável," data-info2="com alta diversidade de fauna e flora." fill="#69B5BC"
+      d="M 205,337
+         C 217,326 235,323 249,331
+         C 263,338 270,352 265,366
+         C 260,379 246,386 231,381
+         C 216,377 205,365 203,352
+         C 202,346 203,341 205,337 Z">
+      <title>Pantanal — planície sazonalmente inundável com grande diversidade de fauna e flora.</title>
+    </path>
+
+    <path id="pampa" class="bioma" tabindex="0" role="button" aria-pressed="false" aria-label="Pampa" data-nome="Pampa" data-info1="Campos naturais e pradarias predominam" data-info2="no extremo sul do Brasil." fill="#A7BC7D"
+      d="M 233,465
+         C 245,468 256,473 267,478
+         C 288,475 311,482 334,478
+         L 334,509
+         C 325,525 315,541 301,551
+         C 288,545 277,530 267,512
+         C 256,496 246,482 233,465 Z">
+      <title>Pampa — campos naturais e pradarias no extremo sul do Brasil.</title>
+    </path>
+
+    <!-- Contorno externo do território, independente dos seis caminhos temáticos. -->
+    <path id="contorno-brasil" aria-hidden="true" fill="none" stroke="#29443A" stroke-width="2.5" stroke-linejoin="round" pointer-events="none"
+      d="M 278,48
+         C 310,38 343,42 371,55
+         C 391,65 407,79 425,91
+         C 444,104 459,121 473,139
+         C 483,154 489,167 484,181
+         C 480,195 469,206 469,219
+         C 475,231 472,244 464,258
+         C 458,275 447,289 440,307
+         C 432,323 431,340 421,356
+         C 414,373 403,391 394,407
+         C 383,428 373,449 358,467
+         C 349,483 339,495 334,509
+         C 325,525 315,541 301,551
+         C 288,545 277,530 267,512
+         C 256,496 246,482 233,465
+         C 221,448 213,431 202,414
+         C 190,398 177,383 169,366
+         C 157,349 143,330 138,313
+         C 127,298 114,285 104,267
+         C 95,247 84,228 82,210
+         C 82,197 94,187 107,175
+         C 120,164 128,151 143,139
+         C 157,127 172,118 188,108
+         C 211,91 235,69 259,56
+         C 266,52 272,49 278,48 Z" />
+  </g>
+
+  <g id="painel-informacoes" aria-live="polite">
+    <text class="titulo" x="545" y="84">BIOMAS DO BRASIL</text>
+    <text class="subtitulo" x="546" y="108">Mapa vetorial interativo</text>
+    <path d="M 545 128 H 865" stroke="#cbd5cc" stroke-width="1" />
+
+    <g class="legenda-item" data-target="amazonia" tabindex="0" role="button" aria-label="Selecionar Amazônia">
+      <rect x="547" y="151" width="15" height="15" rx="3" fill="#2F855A" />
+      <text class="rotulo" x="575" y="163">Amazônia</text>
+    </g>
+    <g class="legenda-item" data-target="cerrado" tabindex="0" role="button" aria-label="Selecionar Cerrado">
+      <rect x="547" y="186" width="15" height="15" rx="3" fill="#D6A84F" />
+      <text class="rotulo" x="575" y="198">Cerrado</text>
+    </g>
+    <g class="legenda-item" data-target="caatinga" tabindex="0" role="button" aria-label="Selecionar Caatinga">
+      <rect x="547" y="221" width="15" height="15" rx="3" fill="#E7C56B" />
+      <text class="rotulo" x="575" y="233">Caatinga</text>
+    </g>
+    <g class="legenda-item" data-target="mata-atlantica" tabindex="0" role="button" aria-label="Selecionar Mata Atlântica">
+      <rect x="547" y="256" width="15" height="15" rx="3" fill="#4F9B83" />
+      <text class="rotulo" x="575" y="268">Mata Atlântica</text>
+    </g>
+    <g class="legenda-item" data-target="pantanal" tabindex="0" role="button" aria-label="Selecionar Pantanal">
+      <rect x="547" y="291" width="15" height="15" rx="3" fill="#69B5BC" />
+      <text class="rotulo" x="575" y="303">Pantanal</text>
+    </g>
+    <g class="legenda-item" data-target="pampa" tabindex="0" role="button" aria-label="Selecionar Pampa">
+      <rect x="547" y="326" width="15" height="15" rx="3" fill="#A7BC7D" />
+      <text class="rotulo" x="575" y="338">Pampa</text>
+    </g>
+
+    <path d="M 545 370 H 865" stroke="#cbd5cc" stroke-width="1" />
+    <text id="info-title" class="rotulo" x="546" y="399">Explore os biomas</text>
+    <text class="texto-info" x="546" y="425">
+      <tspan id="info-linea" x="546" dy="0">Clique em uma região do mapa</tspan>
+      <tspan id="info-lineb" x="546" dy="20">ou em um item da legenda.</tspan>
+    </text>
+    <text class="texto-pequeno" x="546" y="570">Cores ilustrativas · fundo transparente</text>
+  </g>
+
+  <script type="application/ecmascript"><![CDATA[
+    (function () {
+      var svg = document.documentElement;
+      var regions = Array.prototype.slice.call(svg.querySelectorAll('.bioma'));
+      var legendItems = Array.prototype.slice.call(svg.querySelectorAll('.legenda-item'));
+      var title = svg.querySelector('#info-title');
+      var lineA = svg.querySelector('#info-linea');
+      var lineB = svg.querySelector('#info-lineb');
+
+      function showInfo(region) {
+        if (!region) return;
+        title.textContent = region.getAttribute('data-nome') || 'Bioma';
+        lineA.textContent = region.getAttribute('data-info1') || '';
+        lineB.textContent = region.getAttribute('data-info2') || '';
+      }
+
+      function selectRegion(region) {
+        if (!region) return;
+        regions.forEach(function (item) {
+          var active = item === region;
+          item.classList.toggle('selecionado', active);
+          item.setAttribute('aria-pressed', active ? 'true' : 'false');
+        });
+        showInfo(region);
+      }
+
+      regions.forEach(function (region) {
+        region.addEventListener('mouseenter', function () { showInfo(region); });
+        region.addEventListener('focus', function () { showInfo(region); });
+        region.addEventListener('click', function () { selectRegion(region); });
+        region.addEventListener('keydown', function (event) {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            selectRegion(region);
+          }
+        });
+      });
+
+      legendItems.forEach(function (item) {
+        function activate() {
+          var region = svg.querySelector('#' + item.getAttribute('data-target'));
+          selectRegion(region);
+        }
+        item.addEventListener('click', activate);
+        item.addEventListener('keydown', function (event) {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            activate();
+          }
+        });
+      });
+    }());
+  ]]></script>
+</svg>
