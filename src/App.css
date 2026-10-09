@@ -1,0 +1,400 @@
+/* Layout e atmosfera diurna do Atlas Biomas do Brasil */
+
+.app-layout {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 1. Fotografia da floresta amazônica de fundo com desfoque moderado */
+.forest-background {
+  position: fixed;
+  inset: -15px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  filter: blur(10px);
+  transform: scale(1.04);
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* 2. Camada suave de luminosidade natural diurna (sem escurecer o contexto da floresta) */
+.daylight-overlay {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.28) 0%,
+    rgba(240, 248, 243, 0.14) 35%,
+    rgba(19, 45, 33, 0.22) 100%
+  );
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* 3. Camada de conteúdo nítido e interativo */
+.app-content {
+  position: relative;
+  z-index: 2;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Cabeçalho */
+.app-header {
+  padding: 1.5rem 2.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+}
+
+.header-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.header-subtitle {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #17422e;
+  text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  padding: 0.2rem 0.65rem;
+  border-radius: 6px;
+  width: fit-content;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+.header-title {
+  font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: #ffffff;
+  text-shadow: 0 2px 12px rgba(10, 35, 22, 0.5), 0 1px 3px rgba(0, 0, 0, 0.3);
+  line-height: 1.1;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+}
+
+.action-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 0.35rem 0.5rem 0.35rem 0.35rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 4px 16px rgba(12, 38, 25, 0.08);
+}
+
+.btn-fauna-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 9999px;
+  padding: 0.45rem 1rem;
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #244b36;
+  cursor: not-allowed;
+  opacity: 0.8;
+  transition: opacity 0.2s ease;
+}
+
+.btn-icon {
+  display: flex;
+  align-items: center;
+  color: #2b6145;
+}
+
+.badge-upcoming {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: #23523b;
+  padding-right: 0.5rem;
+  white-space: nowrap;
+}
+
+/* Área Principal */
+.main-stage {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 2rem 2.5rem;
+  min-height: calc(100vh - 120px);
+}
+
+.map-area {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+/* Componente do Mapa */
+.biome-map-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 720px;
+}
+
+.map-message-wrapper {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+}
+
+.map-message-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  border-radius: 9999px;
+  padding: 0.45rem 1.25rem;
+  box-shadow: 0 4px 20px rgba(16, 44, 30, 0.12);
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+}
+
+.map-message-badge.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.badge-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9);
+}
+
+.badge-text {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #173827;
+  letter-spacing: -0.2px;
+}
+
+/* Moldura e SVG do Mapa */
+.map-frame {
+  width: 100%;
+  max-width: 580px;
+  aspect-ratio: 450 / 540;
+  background: rgba(255, 255, 255, 0.28);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1.5px solid rgba(255, 255, 255, 0.75);
+  border-radius: 28px;
+  box-shadow: 0 16px 44px rgba(12, 38, 25, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.map-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  filter: drop-shadow(0 8px 16px rgba(10, 30, 20, 0.12));
+}
+
+.biome-path {
+  cursor: pointer;
+  stroke: #ffffff;
+  stroke-width: 2.2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  transition: filter 0.18s cubic-bezier(0.2, 0.8, 0.2, 1),
+              stroke 0.18s ease,
+              stroke-width 0.18s ease,
+              opacity 0.18s ease;
+  outline: none;
+}
+
+/* Destaque sutil com contorno mais claro preservando as cores originais */
+.biome-path:hover,
+.biome-path:focus-visible,
+.biome-path.destacado {
+  stroke: #ffffff;
+  stroke-width: 3.6;
+  filter: brightness(1.09) saturate(1.15) drop-shadow(0 0 10px rgba(255, 255, 255, 0.65));
+  outline: none;
+}
+
+.contorno-externo {
+  fill: none;
+  stroke: #163628;
+  stroke-width: 2.2;
+  stroke-linejoin: round;
+  opacity: 0.65;
+}
+
+/* Legenda compacta posicionada no canto inferior esquerdo */
+.legend-area {
+  position: absolute;
+  bottom: 2rem;
+  left: 2.5rem;
+  z-index: 10;
+}
+
+.biome-legend {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  padding: 0.85rem 1.15rem;
+  box-shadow: 0 8px 30px rgba(14, 38, 26, 0.12);
+  width: 220px;
+}
+
+.legend-title {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: #2b5741;
+  margin-bottom: 0.5rem;
+}
+
+.legend-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.25rem 0.45rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease, color 0.15s ease;
+  outline: none;
+}
+
+.legend-item:hover,
+.legend-item:focus-visible,
+.legend-item.active {
+  background: rgba(47, 133, 90, 0.14);
+  transform: translateX(3px);
+}
+
+.legend-color-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
+}
+
+.legend-name {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #173827;
+}
+
+/* Responsividade */
+
+/* Tablets / Telas médias (<= 960px) */
+@media (max-width: 960px) {
+  .main-stage {
+    padding-bottom: 2rem;
+  }
+
+  .legend-area {
+    position: static;
+    margin-top: 1.5rem;
+    width: 100%;
+    max-width: 580px;
+    display: flex;
+    justify-content: center;
+  }
+
+  .biome-legend {
+    width: 100%;
+    max-width: 580px;
+  }
+
+  .legend-list {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+  }
+}
+
+/* Celulares / Telas pequenas (<= 640px) */
+@media (max-width: 640px) {
+  .app-header {
+    padding: 1.25rem 1.25rem 0.5rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.85rem;
+  }
+
+  .action-wrapper {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .header-title {
+    font-size: 1.6rem;
+  }
+
+  .main-stage {
+    padding: 0.5rem 1rem 2rem;
+    min-height: auto;
+  }
+
+  .map-frame {
+    padding: 0.85rem;
+    border-radius: 20px;
+  }
+
+  .legend-list {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .map-message-badge {
+    padding: 0.4rem 1rem;
+  }
+
+  .badge-text {
+    font-size: 0.85rem;
+  }
+}

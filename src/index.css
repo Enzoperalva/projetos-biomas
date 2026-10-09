@@ -1,0 +1,49 @@
+/* Reset e variáveis de design diurno do Atlas */
+:root {
+  --font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  
+  /* Paleta cromática natural inspirada na vegetação brasileira e luz diurna */
+  --color-forest-deep: #163326;
+  --color-forest-moss: #234d38;
+  --color-forest-light: #3f6852;
+  --color-text-main: #132b20;
+  --color-text-muted: #435e51;
+  --color-text-light: #ffffff;
+  
+  /* Superfícies diurnas translúcidas */
+  --bg-surface-glass: rgba(255, 255, 255, 0.88);
+  --bg-surface-subtle: rgba(255, 255, 255, 0.65);
+  --border-surface: rgba(255, 255, 255, 0.8);
+  --border-subtle: rgba(35, 77, 56, 0.12);
+  --shadow-soft: 0 8px 32px rgba(18, 48, 35, 0.12);
+  --shadow-badge: 0 4px 16px rgba(18, 48, 35, 0.1);
+
+  /* Biomas do Brasil */
+  --color-amazonia: #2F855A;
+  --color-cerrado: #D6A84F;
+  --color-caatinga: #E7C56B;
+  --color-mata-atlantica: #4F9B83;
+  --color-pantanal: #69B5BC;
+  --color-pampa: #A7BC7D;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 100%;
+  min-height: 100%;
+  font-family: var(--font-family);
+  color: var(--color-text-main);
+  background-color: #244234;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+}
