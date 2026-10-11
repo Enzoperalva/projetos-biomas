@@ -1,34 +1,142 @@
-import React, { useEffect, useState } from 'react';
-import { BIOMES, CONTORNO_BRASIL } from '../data/biomeData';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { BIOMES, BIOME_MAP_SOURCE } from '../data/biomeData';
 
 /**
  * Componente do Mapa dos Biomas Brasileiros.
- * Carrega e renderiza a cartografia vetorial a partir de
- * public/assets/biomes/mapa-biomas-brasil.svg, fornecendo estados
- * de hover, foco por teclado e destaque visual diurno sutil.
+ * Carrega a base cartográfica oficial do IBGE 2025 diretamente de
+ * public/assets/biomes/biomas_brasil_ibge_2025.svg sem modificar
+ * geometria, coordenadas ou limites geográficos originais.
+ * Fornece interações de foco, hover suave, suporte a teclado e toque.
  */
 export default function BiomeMap({ activeBiome, onHoverBiome, onLeaveBiome }) {
-  const [svgLoaded, setSvgLoaded] = useState(false);
+  const [svgContent, setSvgContent] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const containerRef = useRef(null);
 
+  // Carrega o arquivo SVG oficial do IBGE 2025
   useEffect(() => {
-    // Valida o carregamento do asset oficial mapa-biomas-brasil.svg
     let isMounted = true;
-    const svgUrl = `${import.meta.env.BASE_URL}assets/biomes/mapa-biomas-brasil.svg`;
+    const svgUrl = `${import.meta.env.BASE_URL}${BIOME_MAP_SOURCE}`;
+
+    setLoading(true);
     fetch(svgUrl)
       .then((res) => {
-        if (res.ok) {
-          if (isMounted) setSvgLoaded(true);
+        if (!res.ok) {
+          throw new Error(`Falha ao carregar o mapa: HTTP ${res.status}`);
+        }
+        return res.text();
+      })
+      .then((text) => {
+        if (isMounted) {
+          setSvgContent(text);
+          setLoading(false);
         }
       })
       .catch((err) => {
-        // Fallback robusto garantido pelas coordenadas extraídas
-        console.info('SVG carregado através da base cartográfica integrada:', err);
+        if (isMounted) {
+          console.error('Erro no carregamento do SVG dos biomas:', err);
+          setError(err.message);
+          setLoading(false);
+        }
       });
 
     return () => {
       isMounted = false;
     };
   }, []);
+
+  // Sincroniza classes e atributos de acessibilidade nos elementos do SVG
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const biomePaths = container.querySelectorAll('[data-bioma], path[id]');
+    biomePaths.forEach((path) => {
+      const isCurrent = activeBiome && path.id === activeBiome;
+      const isOther = activeBiome && path.id !== activeBiome;
+
+      path.classList.toggle('destacado', Boolean(isCurrent));
+      path.classList.toggle('is-selected', Boolean(isCurrent));
+      path.classList.toggle('is-dimmed', Boolean(isOther));
+
+      path.setAttribute('aria-pressed', isCurrent ? 'true' : 'false');
+    });
+  }, [activeBiome, svgContent]);
+
+  // Delegação de eventos de interação sobre os biomas do SVG
+  const handlePointerOver = useCallback(
+    (e) => {
+      const target = e.target.closest('[data-bioma], path[id]');
+      if (target && target.id) {
+        onHoverBiome(target.id);
+      }
+    },
+    [onHoverBiome]
+  );
+
+  const handlePointerLeave = useCallback(
+    (e) => {
+      // Se o cursor saiu do contêiner SVG
+      if (!containerRef.current || !containerRef.current.contains(e.relatedTarget)) {
+        onLeaveBiome();
+      }
+    },
+    [onLeaveBiome]
+  );
+
+  const handleFocus = useCallback(
+    (e) => {
+      const target = e.target.closest('[data-bioma], path[id]');
+      if (target && target.id) {
+        onHoverBiome(target.id);
+      }
+    },
+    [onHoverBiome]
+  );
+
+  const handleBlur = useCallback(
+    (e) => {
+      if (!containerRef.current || !containerRef.current.contains(e.relatedTarget)) {
+        onLeaveBiome();
+      }
+    },
+    [onLeaveBiome]
+  );
+
+  const handleKeyDown = useCallback(
+    (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        const target = e.target.closest('[data-bioma], path[id]');
+        if (target && target.id) {
+          e.preventDefault();
+          if (activeBiome === target.id) {
+            onLeaveBiome();
+          } else {
+            onHoverBiome(target.id);
+          }
+        }
+      }
+    },
+    [activeBiome, onHoverBiome, onLeaveBiome]
+  );
+
+  const handleClick = useCallback(
+    (e) => {
+      const target = e.target.closest('[data-bioma], path[id]');
+      if (target && target.id) {
+        // Alternância em toque/clique: desseleciona se já estiver ativo
+        if (activeBiome === target.id) {
+          onLeaveBiome();
+        } else {
+          onHoverBiome(target.id);
+        }
+      } else {
+        onLeaveBiome();
+      }
+    },
+    [activeBiome, onHoverBiome, onLeaveBiome]
+  );
 
   const activeBiomeData = BIOMES.find((b) => b.id === activeBiome);
 
@@ -53,58 +161,36 @@ export default function BiomeMap({ activeBiome, onHoverBiome, onLeaveBiome }) {
         </div>
       </div>
 
-      {/* Moldura visual do mapa mantendo nitidez sobre o fundo diurno */}
-      <div className="map-frame">
-        <svg
-          viewBox="50 25 450 540"
-          className="map-svg"
-          role="img"
-          aria-labelledby="mapa-titulo mapa-desc"
-          preserveAspectRatio="xMidYMid meet"
-        >
-          <title id="mapa-titulo">Biomas do Brasil</title>
-          <desc id="mapa-desc">
-            Mapa vetorial com as seis regiões biológicas do Brasil: Amazônia, Cerrado, Caatinga, Mata Atlântica, Pantanal e Pampa.
-          </desc>
+      {/* Painel translúcido centralizado contendo o SVG cartográfico oficial */}
+      <div
+        className={`map-frame ${activeBiome ? 'has-active-biome' : ''}`}
+        onPointerOver={handlePointerOver}
+        onPointerOut={handlePointerLeave}
+        onFocusCapture={handleFocus}
+        onBlurCapture={handleBlur}
+        onKeyDown={handleKeyDown}
+        onClick={handleClick}
+      >
+        {loading && (
+          <div className="map-loading-indicator" role="status" aria-live="polite">
+            <span className="spinner" aria-hidden="true" />
+            <span className="loading-label">Carregando cartografia oficial do IBGE...</span>
+          </div>
+        )}
 
-          <g id="camada-biomas" className="camada-biomas">
-            {BIOMES.map((biome) => {
-              const isHovered = activeBiome === biome.id;
-              return (
-                <path
-                  key={biome.id}
-                  id={`mapa-${biome.id}`}
-                  d={biome.d}
-                  fill={biome.color}
-                  className={`biome-path ${isHovered ? 'destacado' : ''}`}
-                  tabIndex={0}
-                  role="button"
-                  aria-pressed={isHovered}
-                  aria-label={`${biome.name}. Pressione Enter para inspecionar.`}
-                  onMouseEnter={() => onHoverBiome(biome.id)}
-                  onMouseLeave={onLeaveBiome}
-                  onFocus={() => onHoverBiome(biome.id)}
-                  onBlur={onLeaveBiome}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      onHoverBiome(biome.id);
-                    }
-                  }}
-                />
-              );
-            })}
+        {error && (
+          <div className="map-error-indicator" role="alert">
+            <p>Não foi possível carregar os dados cartográficos.</p>
+          </div>
+        )}
 
-            {/* Contorno externo do território nacional para acabamento geográfico */}
-            <path
-              id="contorno-brasil"
-              d={CONTORNO_BRASIL}
-              className="contorno-externo"
-              aria-hidden="true"
-              pointerEvents="none"
-            />
-          </g>
-        </svg>
+        {!loading && !error && (
+          <div
+            ref={containerRef}
+            className="map-svg-viewport"
+            dangerouslySetInnerHTML={{ __html: svgContent }}
+          />
+        )}
       </div>
     </section>
   );

@@ -18,13 +18,13 @@
   --shadow-soft: 0 8px 32px rgba(18, 48, 35, 0.12);
   --shadow-badge: 0 4px 16px rgba(18, 48, 35, 0.1);
 
-  /* Biomas do Brasil */
-  --color-amazonia: #2F855A;
-  --color-cerrado: #D6A84F;
-  --color-caatinga: #E7C56B;
-  --color-mata-atlantica: #4F9B83;
-  --color-pantanal: #69B5BC;
-  --color-pampa: #A7BC7D;
+  /* Biomas do Brasil — Base oficial IBGE 2025 */
+  --color-amazonia: #24553D;
+  --color-cerrado: #C29A4B;
+  --color-caatinga: #DEC27D;
+  --color-mata-atlantica: #278568;
+  --color-pantanal: #4F8C88;
+  --color-pampa: #91A68A;
 }
 
 *, *::before, *::after {

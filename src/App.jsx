@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Header from './components/Header';
 import BiomeMap from './components/BiomeMap';
 import BiomeLegend from './components/BiomeLegend';
@@ -6,21 +6,43 @@ import './App.css';
 
 /**
  * Interface principal do Atlas Biomas do Brasil.
- * Experiência diurna com vídeo da floresta amazônica de fundo em loop,
- * áudio ambiente independente e mapa vetorial interativo em destaque.
+ * Experiência imersiva diurna com vídeo da floresta amazônica de fundo em loop,
+ * áudio ambiente contínuo com fallback inteligente de reprodução
+ * e mapa vetorial oficial do IBGE 2025 interativo em destaque centralizado.
  */
 export default function App() {
   const [activeBiome, setActiveBiome] = useState(null);
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const videoRef = useRef(null);
   const audioRef = useRef(null);
 
-  const handleHoverBiome = (id) => {
+  const handleHoverBiome = useCallback((id) => {
     setActiveBiome(id);
-  };
+  }, []);
 
-  const handleLeaveBiome = () => {
+  const handleLeaveBiome = useCallback(() => {
     setActiveBiome(null);
-  };
+  }, []);
+
+  // Alterna a reprodução do áudio ambiente
+  const toggleAudio = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    if (audio.paused) {
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => setIsAudioPlaying(true))
+          .catch((err) => {
+            console.debug('Reprodução de áudio aguardando interação:', err);
+          });
+      }
+    } else {
+      audio.pause();
+      setIsAudioPlaying(false);
+    }
+  }, []);
 
   useEffect(() => {
     // 1. Controle do vídeo de fundo (respeitando prefers-reduced-motion)
@@ -51,52 +73,70 @@ export default function App() {
       }
     }
 
-    // 2. Controle do áudio ambiente independente com loop contínuo
+    // 2. Controle do áudio ambiente independente com loop contínuo e tratamento de autoplay
     const audio = audioRef.current;
+    let audioCleanup = null;
+
     if (audio) {
       audio.loop = true;
+      audio.volume = 0.55;
+
+      const syncPlayState = () => setIsAudioPlaying(true);
+      const syncPauseState = () => setIsAudioPlaying(false);
+
+      audio.addEventListener('play', syncPlayState);
+      audio.addEventListener('pause', syncPauseState);
 
       const removeInteractionListeners = () => {
-        window.removeEventListener('click', handleUserInteraction);
+        window.removeEventListener('pointerdown', handleUserInteraction);
         window.removeEventListener('keydown', handleUserInteraction);
         window.removeEventListener('touchstart', handleUserInteraction);
-        window.removeEventListener('pointerdown', handleUserInteraction);
       };
 
       const handleUserInteraction = () => {
-        const promise = audio.play();
-        if (promise !== undefined) {
-          promise
-            .then(removeInteractionListeners)
-            .catch(() => {});
+        if (audio.paused) {
+          const playPromise = audio.play();
+          if (playPromise !== undefined) {
+            playPromise
+              .then(() => {
+                setIsAudioPlaying(true);
+                removeInteractionListeners();
+              })
+              .catch(() => {});
+          }
+        } else {
+          removeInteractionListeners();
         }
       };
 
-      // Tenta reprodução inicial automática
+      // Tenta reprodução inicial automática (tratando rejeição sem erro ruidoso)
       const initialPromise = audio.play();
       if (initialPromise !== undefined) {
         initialPromise
-          .then(removeInteractionListeners)
+          .then(() => {
+            setIsAudioPlaying(true);
+          })
           .catch(() => {
-            // Autoplay com som bloqueado pelo navegador; aguarda primeira interação
+            // Autoplay com som bloqueado pela política do navegador:
+            // Configura ouvintes para a primeira interação do usuário
+            setIsAudioPlaying(false);
+            window.addEventListener('pointerdown', handleUserInteraction, { passive: true, once: true });
+            window.addEventListener('keydown', handleUserInteraction, { passive: true, once: true });
+            window.addEventListener('touchstart', handleUserInteraction, { passive: true, once: true });
           });
       }
 
-      window.addEventListener('click', handleUserInteraction, { passive: true });
-      window.addEventListener('keydown', handleUserInteraction, { passive: true });
-      window.addEventListener('touchstart', handleUserInteraction, { passive: true });
-      window.addEventListener('pointerdown', handleUserInteraction, { passive: true });
-
-      // Fallback para garantir reinício sem interrupções
+      // Fallback para garantir reinício sem interrupções se o loop nativo falhar
       const handleAudioEnded = () => {
         audio.currentTime = 0;
         audio.play().catch(() => {});
       };
       audio.addEventListener('ended', handleAudioEnded);
 
-      return () => {
-        if (motionCleanup) motionCleanup();
+      audioCleanup = () => {
         removeInteractionListeners();
+        audio.removeEventListener('play', syncPlayState);
+        audio.removeEventListener('pause', syncPauseState);
         audio.removeEventListener('ended', handleAudioEnded);
         audio.pause();
       };
@@ -104,6 +144,7 @@ export default function App() {
 
     return () => {
       if (motionCleanup) motionCleanup();
+      if (audioCleanup) audioCleanup();
     };
   }, []);
 
@@ -131,12 +172,15 @@ export default function App() {
         style={{ display: 'none' }}
       />
 
-      {/* Camada de atmosfera de luz natural suave (sem escurecer ou simular noite) */}
+      {/* Camada de atmosfera de luz natural suave */}
       <div className="daylight-overlay" aria-hidden="true" />
 
       {/* Conteúdo principal nítido sobre o fundo */}
       <div className="app-content">
-        <Header />
+        <Header
+          isAudioPlaying={isAudioPlaying}
+          onToggleAudio={toggleAudio}
+        />
 
         <main className="main-stage">
           <div className="map-area">
