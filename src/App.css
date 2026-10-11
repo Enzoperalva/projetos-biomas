@@ -9,13 +9,15 @@
   flex-direction: column;
 }
 
-/* 1. Fotografia da floresta amazônica de fundo com desfoque moderado */
+/* 1. Vídeo da floresta amazônica de fundo com desfoque moderado */
 .forest-background {
   position: fixed;
-  inset: -15px;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+  top: -15px;
+  left: -15px;
+  width: calc(100% + 30px);
+  height: calc(100% + 30px);
+  object-fit: cover;
+  object-position: center;
   filter: blur(10px);
   transform: scale(1.04);
   z-index: 0;
