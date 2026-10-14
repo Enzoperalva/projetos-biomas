@@ -8,7 +8,7 @@ import { BIOMES, BIOME_MAP_SOURCE } from '../data/biomeData';
  * geometria, coordenadas ou limites geográficos originais.
  * Fornece interações de foco, hover suave, suporte a teclado e toque.
  */
-export default function BiomeMap({ activeBiome, onHoverBiome, onLeaveBiome }) {
+function BiomeMap({ activeBiome, onHoverBiome, onLeaveBiome }) {
   const [svgContent, setSvgContent] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -64,26 +64,28 @@ export default function BiomeMap({ activeBiome, onHoverBiome, onLeaveBiome }) {
     });
   }, [activeBiome, svgContent]);
 
-  // Delegação de eventos de interação sobre os biomas do SVG
-  const handlePointerOver = useCallback(
+  // Delegação eficiente de eventos de interação sobre os biomas do SVG
+  const handlePointerMove = useCallback(
     (e) => {
       const target = e.target.closest('[data-bioma], path[id]');
       if (target && target.id) {
-        onHoverBiome(target.id);
+        if (activeBiome !== target.id) {
+          onHoverBiome(target.id);
+        }
+      } else {
+        if (activeBiome) {
+          onLeaveBiome();
+        }
       }
     },
-    [onHoverBiome]
+    [activeBiome, onHoverBiome, onLeaveBiome]
   );
 
-  const handlePointerLeave = useCallback(
-    (e) => {
-      // Se o cursor saiu do contêiner SVG
-      if (!containerRef.current || !containerRef.current.contains(e.relatedTarget)) {
-        onLeaveBiome();
-      }
-    },
-    [onLeaveBiome]
-  );
+  const handlePointerLeave = useCallback(() => {
+    if (activeBiome) {
+      onLeaveBiome();
+    }
+  }, [activeBiome, onLeaveBiome]);
 
   const handleFocus = useCallback(
     (e) => {
@@ -164,8 +166,8 @@ export default function BiomeMap({ activeBiome, onHoverBiome, onLeaveBiome }) {
       {/* Painel translúcido centralizado contendo o SVG cartográfico oficial */}
       <div
         className={`map-frame ${activeBiome ? 'has-active-biome' : ''}`}
-        onPointerOver={handlePointerOver}
-        onPointerOut={handlePointerLeave}
+        onPointerMove={handlePointerMove}
+        onPointerLeave={handlePointerLeave}
         onFocusCapture={handleFocus}
         onBlurCapture={handleBlur}
         onKeyDown={handleKeyDown}
@@ -195,3 +197,5 @@ export default function BiomeMap({ activeBiome, onHoverBiome, onLeaveBiome }) {
     </section>
   );
 }
+
+export default React.memo(BiomeMap);

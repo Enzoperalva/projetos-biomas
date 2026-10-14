@@ -6,7 +6,7 @@ import { BIOMES } from '../data/biomeData';
  * Apresenta a relação dos seis biomas brasileiros e evidencia
  * visualmente a região sob foco com nome, cor e indicador de status.
  */
-export default function BiomeLegend({ activeBiome, onHoverBiome, onLeaveBiome }) {
+function BiomeLegend({ activeBiome, onHoverBiome, onLeaveBiome }) {
   const activeBiomeData = BIOMES.find((b) => b.id === activeBiome);
 
   return (
@@ -67,3 +67,5 @@ export default function BiomeLegend({ activeBiome, onHoverBiome, onLeaveBiome })
     </aside>
   );
 }
+
+export default React.memo(BiomeLegend);

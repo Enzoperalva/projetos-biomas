@@ -4,7 +4,7 @@ import React from 'react';
  * Cabeçalho principal com identificação visual do atlas,
  * controle do som ambiente diurno e indicador do futuro modo noturno.
  */
-export default function Header({ isAudioPlaying, onToggleAudio }) {
+function Header({ isAudioPlaying, onToggleAudio }) {
   return (
     <header className="app-header">
       <div className="header-brand">
@@ -61,3 +61,5 @@ export default function Header({ isAudioPlaying, onToggleAudio }) {
     </header>
   );
 }
+
+export default React.memo(Header);
