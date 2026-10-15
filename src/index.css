@@ -41,6 +41,7 @@ html, body {
   background-color: #244234;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: clip;
 }
 
 #root {
