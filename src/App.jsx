@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Header from './components/Header';
 import BiomeMap from './components/BiomeMap';
 import BiomeLegend from './components/BiomeLegend';
+import { PRESERVATION_CARDS } from './data/preservationData';
 import './App.css';
 
 const BASE_VOLUME = 0.55;
@@ -19,6 +20,15 @@ export default function App() {
   const videoRef = useRef(null);
   const audioRef = useRef(null);
   const heroTrackRef = useRef(null);
+
+  // Referências para a seção de preservação dos biomas e animação dos cards
+  const protectionTrackRef = useRef(null);
+  const protectionStickyRef = useRef(null);
+  const protectionStageRef = useRef(null);
+  const protectionHeaderRef = useRef(null);
+  const protectionTitleRef = useRef(null);
+  const protectionCardsWrapperRef = useRef(null);
+  const protectionCardsListRef = useRef([]);
 
   // Controle de intenção explícita do usuário vs pausa provocada pela transição
   const userWantsAudioRef = useRef(false);
@@ -220,11 +230,103 @@ export default function App() {
         }
       };
 
+      // 4. Sincronização contínua e reversível da seção de preservação (título e cards)
+      const updatePreservationScroll = () => {
+        const track = protectionTrackRef.current;
+        const stickyFrame = protectionStickyRef.current;
+        const stage = protectionStageRef.current;
+        const header = protectionHeaderRef.current;
+        const title = protectionTitleRef.current;
+        const cardsWrapper = protectionCardsWrapperRef.current;
+        const cardElements = protectionCardsListRef.current;
+
+        if (!track || !stickyFrame || !header || !title || !cardsWrapper) return;
+
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          title.style.transform = '';
+          cardsWrapper.style.opacity = '1';
+          cardsWrapper.style.pointerEvents = 'auto';
+          for (let i = 0; i < cardElements.length; i++) {
+            const cardEl = cardElements[i];
+            if (cardEl) {
+              cardEl.style.opacity = '1';
+              cardEl.style.transform = '';
+            }
+          }
+          return;
+        }
+
+        const trackRect = track.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+        const viewportWidth = window.innerWidth;
+        const transitionDistance = track.offsetHeight - viewportHeight;
+
+        let progress = 0;
+        if (transitionDistance > 0) {
+          const currentScroll = -trackRect.top;
+          progress = Math.max(0, Math.min(1, currentScroll / transitionDistance));
+        } else if (track.offsetHeight > 0) {
+          progress = Math.max(0, Math.min(1, -trackRect.top / track.offsetHeight));
+        }
+
+        // Etapa 1: Apresentação suave e refinada do título no canto superior esquerdo (0 a 0.35)
+        const rawTitleProgress = Math.min(1, Math.max(0, progress / 0.35));
+        const smoothTitle = rawTitleProgress * rawTitleProgress * (3 - 2 * rawTitleProgress);
+
+        if (smoothTitle >= 0.999) {
+          title.style.opacity = '1';
+          title.style.transform = '';
+        } else {
+          const titleY = (1 - smoothTitle) * 16;
+          title.style.opacity = Math.max(0.15, smoothTitle).toFixed(3);
+          title.style.transform = `translate3d(0, ${titleY.toFixed(2)}px, 0)`;
+        }
+
+        // Etapa 2: Aparição progressiva dos cinco cards com defasagem fluida (0.35 a 0.85)
+        const rawCardsProgress = Math.min(1, Math.max(0, (progress - 0.35) / 0.50));
+
+        if (rawCardsProgress <= 0.001) {
+          cardsWrapper.style.opacity = '0';
+          cardsWrapper.style.pointerEvents = 'none';
+          for (let i = 0; i < cardElements.length; i++) {
+            const cardEl = cardElements[i];
+            if (cardEl) {
+              cardEl.style.opacity = '0';
+              cardEl.style.transform = 'translate3d(0, 24px, 0)';
+            }
+          }
+        } else {
+          cardsWrapper.style.opacity = '1';
+          cardsWrapper.style.pointerEvents = rawCardsProgress > 0.88 ? 'auto' : 'none';
+
+          const cardStagger = 0.06;
+          const cardDuration = 0.72;
+
+          for (let i = 0; i < cardElements.length; i++) {
+            const cardEl = cardElements[i];
+            if (!cardEl) continue;
+
+            const cardStart = i * cardStagger;
+            const cardRaw = Math.min(1, Math.max(0, (rawCardsProgress - cardStart) / cardDuration));
+            const cardP = cardRaw * cardRaw * (3 - 2 * cardRaw);
+
+            if (cardP >= 0.999) {
+              cardEl.style.opacity = '1';
+              cardEl.style.transform = '';
+            } else {
+              cardEl.style.opacity = cardP.toFixed(3);
+              cardEl.style.transform = `translate3d(0, ${((1 - cardP) * 24).toFixed(2)}px, 0)`;
+            }
+          }
+        }
+      };
+
       const handleScrollOrResize = () => {
         if (rafId !== null) return;
         rafId = window.requestAnimationFrame(() => {
           rafId = null;
           updateScrollAudio();
+          updatePreservationScroll();
         });
       };
 
@@ -233,6 +335,7 @@ export default function App() {
 
       // Verificação inicial caso a página recarregue com posição de rolagem prévia
       updateScrollAudio();
+      updatePreservationScroll();
 
       audioCleanup = () => {
         if (rafId !== null) {
@@ -311,12 +414,49 @@ export default function App() {
         </div>
       </div>
 
-      {/* Nova seção com fundo verde-escuro opaco (#06402b) e título semântico */}
-      <section className="protection-section" aria-label="Proteção dos Biomas">
-        <div className="protection-content">
-          <h2 className="protection-title">
-            O que podemos fazer para proteger os biomas brasileiros?
-          </h2>
+      {/* Seção de preservação dos biomas brasileiros com efeito contínuo de scroll e cards */}
+      <section
+        ref={protectionTrackRef}
+        className="protection-section"
+        aria-label="Proteção dos Biomas"
+      >
+        <div ref={protectionStickyRef} className="protection-sticky-frame">
+          <div ref={protectionStageRef} className="protection-stage">
+            <header ref={protectionHeaderRef} className="protection-header">
+              <h2 ref={protectionTitleRef} className="protection-title">
+                O que podemos fazer para proteger os biomas brasileiros?
+              </h2>
+            </header>
+
+            <div ref={protectionCardsWrapperRef} className="protection-cards-wrapper">
+              <div className="protection-cards-grid">
+                {PRESERVATION_CARDS.map((card, index) => (
+                  <article
+                    key={card.id}
+                    ref={(el) => {
+                      protectionCardsListRef.current[index] = el;
+                    }}
+                    className="protection-card"
+                  >
+                    <div className="card-top-strip" aria-hidden="true" />
+                    <div className="card-body">
+                      <div className="card-icon-container">
+                        <img
+                          src={card.icon}
+                          alt=""
+                          className="card-icon-img"
+                          loading="lazy"
+                          aria-hidden="true"
+                        />
+                      </div>
+                      <h3 className="card-title">{card.title}</h3>
+                      <p className="card-description">{card.description}</p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </section>
     </div>
