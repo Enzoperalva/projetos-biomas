@@ -964,5 +964,122 @@
     opacity: 1 !important;
     transform: none !important;
   }
+
+  .footer-link,
+  .footer-link-icon {
+    transition: none !important;
+  }
 }
+
+/* 5. Rodapé minimalista com rolagem natural */
+.app-footer {
+  position: relative;
+  z-index: 40;
+  width: 100%;
+  background-color: #000000;
+  box-sizing: border-box;
+  padding: 1.25rem 2.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.footer-container {
+  width: 100%;
+  max-width: 1350px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  box-sizing: border-box;
+}
+
+.footer-copyright {
+  color: #94a3b8;
+  font-family: var(--font-family);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.footer-links {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.75rem;
+}
+
+.footer-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: #cbd5e1;
+  font-family: var(--font-family);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  opacity: 0.85;
+  transition: color 0.2s ease, opacity 0.2s ease;
+  outline: none;
+}
+
+.footer-link-icon {
+  flex-shrink: 0;
+  color: #94a3b8;
+  transition: color 0.2s ease;
+}
+
+.footer-link:hover {
+  color: #ffffff;
+  opacity: 1;
+}
+
+.footer-link:hover .footer-link-icon {
+  color: #ffffff;
+}
+
+.footer-link:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.6);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* Responsividade do rodapé */
+@media (max-width: 768px) {
+  .app-footer {
+    padding: 1.25rem 1.5rem;
+  }
+
+  .footer-container {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.85rem;
+  }
+
+  .footer-links {
+    justify-content: center;
+    gap: 1.25rem;
+  }
+}
+
+@media (max-width: 520px) {
+  .app-footer {
+    padding: 1.15rem 1rem;
+  }
+
+  .footer-container {
+    gap: 0.75rem;
+  }
+
+  .footer-links {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: center;
+  }
+}
+
 

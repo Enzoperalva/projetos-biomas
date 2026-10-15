@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Header from './components/Header';
 import BiomeMap from './components/BiomeMap';
 import BiomeLegend from './components/BiomeLegend';
+import Footer from './components/Footer';
 import { PRESERVATION_CARDS } from './data/preservationData';
 import './App.css';
 
@@ -459,6 +460,9 @@ export default function App() {
           </div>
         </div>
       </section>
+
+      {/* Rodapé minimalista com rolagem natural */}
+      <Footer />
     </div>
   );
 }
