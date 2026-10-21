@@ -340,8 +340,9 @@ export default function App() {
 
         if (!track || !title || !cardsWrapper) return;
 
-        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || window.innerWidth <= 768) {
           title.style.transform = '';
+          title.style.opacity = '1';
           cardsWrapper.style.opacity = '1';
           cardsWrapper.style.pointerEvents = 'auto';
           for (let i = 0; i < cardElements.length; i++) {

@@ -4,11 +4,11 @@ import React, { useState } from 'react';
  * Cores temáticas para as categorias oficiais de conservação (ICMBio / IUCN).
  */
 const CONSERVATION_COLORS = {
-  CR: { bg: 'rgba(220, 38, 38, 0.16)', border: 'rgba(220, 38, 38, 0.55)', text: '#ef4444' },
-  EN: { bg: 'rgba(234, 88, 12, 0.16)', border: 'rgba(234, 88, 12, 0.55)', text: '#f97316' },
-  VU: { bg: 'rgba(217, 119, 6, 0.16)', border: 'rgba(217, 119, 6, 0.55)', text: '#f59e0b' },
-  NT: { bg: 'rgba(2, 132, 199, 0.16)', border: 'rgba(2, 132, 199, 0.55)', text: '#38bdf8' },
-  LC: { bg: 'rgba(22, 163, 74, 0.16)', border: 'rgba(22, 163, 74, 0.55)', text: '#4ade80' }
+  CR: { bg: 'rgba(220, 38, 38, 0.28)', border: '#ef4444', text: '#ffffff', badgeBg: 'rgba(185, 28, 28, 0.9)' },
+  EN: { bg: 'rgba(234, 88, 12, 0.32)', border: '#f97316', text: '#ffffff', badgeBg: 'rgba(194, 65, 12, 0.9)' },
+  VU: { bg: 'rgba(217, 119, 6, 0.32)', border: '#f59e0b', text: '#ffffff', badgeBg: 'rgba(180, 83, 9, 0.9)' },
+  NT: { bg: 'rgba(2, 132, 199, 0.28)', border: '#38bdf8', text: '#ffffff', badgeBg: 'rgba(3, 105, 161, 0.9)' },
+  LC: { bg: 'rgba(22, 163, 74, 0.28)', border: '#4ade80', text: '#ffffff', badgeBg: 'rgba(21, 128, 61, 0.9)' }
 };
 
 /**
@@ -68,7 +68,7 @@ function AnimalCard({ animal, isNightMode }) {
           <span
             className="badge-conservation"
             style={{
-              backgroundColor: statusStyle.bg,
+              backgroundColor: statusStyle.badgeBg,
               borderColor: statusStyle.border,
               color: statusStyle.text
             }}
