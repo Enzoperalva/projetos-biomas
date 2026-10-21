@@ -1,8 +1,11 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import Header from './components/Header';
 import BiomeMap from './components/BiomeMap';
 import BiomeLegend from './components/BiomeLegend';
+import AnimalGallery from './components/AnimalGallery';
+import FlashlightOverlay from './components/FlashlightOverlay';
 import Footer from './components/Footer';
+import { BIOMES } from './data/biomeData';
 import { PRESERVATION_CARDS } from './data/preservationData';
 import './App.css';
 
@@ -10,14 +13,21 @@ const BASE_VOLUME = 0.55;
 
 /**
  * Interface principal do Atlas Biomas do Brasil.
- * Experiência imersiva diurna com vídeo da floresta amazônica de fundo em loop,
- * áudio ambiente contínuo com fallback inteligente de reprodução,
- * mapa vetorial oficial do IBGE 2025 interativo em destaque centralizado,
- * e transição contínua e reversível controlada pela rolagem para a nova seção de proteção dos biomas.
+ * Experiência interativa e imersiva com seleção de biomas, galeria de fauna diurna e noturna,
+ * áudio ambiente independente por bioma com transição suave, modo Dia/Noite com lanterna digital,
+ * filtro de espécies ameaçadas de extinção e transição contínua para a seção de preservação.
  */
 export default function App() {
-  const [activeBiome, setActiveBiome] = useState(null);
+  // Estado do bioma selecionado (padrão: Amazônia) e sob hover
+  const [selectedBiome, setSelectedBiome] = useState('amazonia');
+  const [hoveredBiome, setHoveredBiome] = useState(null);
+
+  // Estados dos modos e filtros
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+  const [isNightMode, setIsNightMode] = useState(false);
+  const [onlyThreatened, setOnlyThreatened] = useState(false);
+
+  // Referências de mídia e elementos de rolagem
   const videoRef = useRef(null);
   const audioRef = useRef(null);
   const heroTrackRef = useRef(null);
@@ -34,16 +44,118 @@ export default function App() {
   // Controle de intenção explícita do usuário vs pausa provocada pela transição
   const userWantsAudioRef = useRef(false);
   const pausedByTransitionRef = useRef(false);
+  const currentTargetVolumeRef = useRef(BASE_VOLUME);
+  const isFadingAudioRef = useRef(false);
+
+  // Dados do bioma atualmente selecionado
+  const selectedBiomeData = useMemo(() => {
+    return BIOMES.find((b) => b.id === selectedBiome) || BIOMES[0];
+  }, [selectedBiome]);
+
+  // Transição suave de áudio (crossfade / fade-out e fade-in)
+  const changeBiomeAudio = useCallback((newAudioSrc) => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const fullSrc = `${import.meta.env.BASE_URL}${newAudioSrc}`;
+
+    // Se o áudio estiver pausado ou mutado pelo usuário, apenas atualiza a fonte
+    if (!userWantsAudioRef.current || audio.paused || pausedByTransitionRef.current) {
+      audio.src = fullSrc;
+      return;
+    }
+
+    // Evita múltiplos fades simultâneos
+    if (isFadingAudioRef.current) {
+      audio.src = fullSrc;
+      audio.play().catch(() => {});
+      return;
+    }
+
+    isFadingAudioRef.current = true;
+    const initialVolume = audio.volume;
+    const fadeOutDuration = 220;
+    const startTime = performance.now();
+
+    const fadeOutStep = (now) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(1, elapsed / fadeOutDuration);
+      audio.volume = Math.max(0, initialVolume * (1 - progress));
+
+      if (progress < 1) {
+        requestAnimationFrame(fadeOutStep);
+      } else {
+        audio.pause();
+        audio.src = fullSrc;
+        audio.currentTime = 0;
+
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => {
+              const inStartTime = performance.now();
+              const fadeInDuration = 280;
+              const targetVol = currentTargetVolumeRef.current;
+
+              const fadeInStep = (inNow) => {
+                const inElapsed = inNow - inStartTime;
+                const inProgress = Math.min(1, inElapsed / fadeInDuration);
+                audio.volume = Math.min(targetVol, targetVol * inProgress);
+
+                if (inProgress < 1 && !audio.paused) {
+                  requestAnimationFrame(fadeInStep);
+                } else {
+                  isFadingAudioRef.current = false;
+                }
+              };
+
+              requestAnimationFrame(fadeInStep);
+            })
+            .catch((err) => {
+              isFadingAudioRef.current = false;
+              console.debug('Transição de áudio aguardando interação:', err);
+            });
+        } else {
+          isFadingAudioRef.current = false;
+        }
+      }
+    };
+
+    requestAnimationFrame(fadeOutStep);
+  }, []);
+
+  // Seleção de bioma
+  const handleSelectBiome = useCallback(
+    (id) => {
+      if (!id) return;
+      setSelectedBiome(id);
+      const targetBiome = BIOMES.find((b) => b.id === id);
+      if (targetBiome && targetBiome.audioSrc) {
+        changeBiomeAudio(targetBiome.audioSrc);
+      }
+    },
+    [changeBiomeAudio]
+  );
 
   const handleHoverBiome = useCallback((id) => {
-    setActiveBiome(id);
+    setHoveredBiome(id);
   }, []);
 
   const handleLeaveBiome = useCallback(() => {
-    setActiveBiome(null);
+    setHoveredBiome(null);
   }, []);
 
-  // Alterna a reprodução do áudio ambiente respeitando a decisão explícita do usuário
+  // Alterna Modo Dia / Modo Noite
+  const handleToggleNightMode = useCallback(() => {
+    setIsNightMode((prev) => !prev);
+  }, []);
+
+  // Alterna filtro de animais ameaçados de extinção
+  const handleToggleThreatened = useCallback(() => {
+    setOnlyThreatened((prev) => !prev);
+  }, []);
+
+  // Alterna a reprodução do áudio ambiente
   const toggleAudio = useCallback(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -74,9 +186,18 @@ export default function App() {
           return;
         }
 
-        audio.volume = Math.max(0, Math.min(1, BASE_VOLUME * (1 - progress)));
+        const vol = Math.max(0, Math.min(1, BASE_VOLUME * (1 - progress)));
+        currentTargetVolumeRef.current = vol;
+        audio.volume = vol;
       } else {
+        currentTargetVolumeRef.current = BASE_VOLUME;
         audio.volume = BASE_VOLUME;
+      }
+
+      // Garante que a fonte do áudio atual seja a do bioma selecionado
+      const expectedSrc = `${import.meta.env.BASE_URL}${selectedBiomeData.audioSrc}`;
+      if (!audio.src || !audio.src.includes(selectedBiomeData.audioSrc)) {
+        audio.src = expectedSrc;
       }
 
       const playPromise = audio.play();
@@ -93,10 +214,10 @@ export default function App() {
       audio.pause();
       setIsAudioPlaying(false);
     }
-  }, []);
+  }, [selectedBiomeData]);
 
+  // Efeito do vídeo de fundo e áudio
   useEffect(() => {
-    // 1. Controle do vídeo de fundo (respeitando prefers-reduced-motion)
     const video = videoRef.current;
     let motionCleanup = null;
 
@@ -124,7 +245,6 @@ export default function App() {
       }
     }
 
-    // 2. Controle do áudio ambiente independente com loop contínuo e sincronização com a rolagem
     const audio = audioRef.current;
     let audioCleanup = null;
 
@@ -145,12 +265,11 @@ export default function App() {
       };
 
       const handleUserInteraction = () => {
-        if (audio.paused && !pausedByTransitionRef.current) {
+        if (audio.paused && !pausedByTransitionRef.current && userWantsAudioRef.current) {
           const playPromise = audio.play();
           if (playPromise !== undefined) {
             playPromise
               .then(() => {
-                userWantsAudioRef.current = true;
                 setIsAudioPlaying(true);
                 removeInteractionListeners();
               })
@@ -161,33 +280,14 @@ export default function App() {
         }
       };
 
-      // Tenta reprodução inicial automática (tratando rejeição sem erro ruidoso)
-      const initialPromise = audio.play();
-      if (initialPromise !== undefined) {
-        initialPromise
-          .then(() => {
-            userWantsAudioRef.current = true;
-            setIsAudioPlaying(true);
-          })
-          .catch(() => {
-            // Autoplay com som bloqueado pela política do navegador:
-            // Configura ouvintes para a primeira interação do usuário
-            userWantsAudioRef.current = false;
-            setIsAudioPlaying(false);
-            window.addEventListener('pointerdown', handleUserInteraction, { passive: true, once: true });
-            window.addEventListener('keydown', handleUserInteraction, { passive: true, once: true });
-            window.addEventListener('touchstart', handleUserInteraction, { passive: true, once: true });
-          });
-      }
-
-      // Fallback para garantir reinício sem interrupções se o loop nativo falhar
+      // Loop nativo seguro
       const handleAudioEnded = () => {
         audio.currentTime = 0;
         audio.play().catch(() => {});
       };
       audio.addEventListener('ended', handleAudioEnded);
 
-      // 3. Sincronização progressiva do áudio com o avanço da transição de rolagem
+      // Sincronização progressiva do áudio com a rolagem
       let rafId = null;
 
       const updateScrollAudio = () => {
@@ -207,18 +307,18 @@ export default function App() {
         }
 
         if (progress >= 0.995) {
-          // Cobertura completa atingida: volume zerado e áudio pausado
           audio.volume = 0;
           if (!audio.paused) {
             pausedByTransitionRef.current = true;
             audio.pause();
           }
         } else {
-          // Volume atenua suavemente proporcional ao progresso da cobertura
           const currentVolume = BASE_VOLUME * (1 - progress);
-          audio.volume = Math.max(0, Math.min(1, currentVolume));
+          currentTargetVolumeRef.current = currentVolume;
+          if (!isFadingAudioRef.current) {
+            audio.volume = Math.max(0, Math.min(1, currentVolume));
+          }
 
-          // Retoma suavemente se foi pausado pela transição e o usuário não o mutou manualmente
           if (pausedByTransitionRef.current && userWantsAudioRef.current) {
             pausedByTransitionRef.current = false;
             const playPromise = audio.play();
@@ -231,17 +331,14 @@ export default function App() {
         }
       };
 
-      // 4. Sincronização contínua e reversível da seção de preservação (título e cards)
+      // Sincronização contínua e reversível da seção de preservação
       const updatePreservationScroll = () => {
         const track = protectionTrackRef.current;
-        const stickyFrame = protectionStickyRef.current;
-        const stage = protectionStageRef.current;
-        const header = protectionHeaderRef.current;
         const title = protectionTitleRef.current;
         const cardsWrapper = protectionCardsWrapperRef.current;
         const cardElements = protectionCardsListRef.current;
 
-        if (!track || !stickyFrame || !header || !title || !cardsWrapper) return;
+        if (!track || !title || !cardsWrapper) return;
 
         if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
           title.style.transform = '';
@@ -259,7 +356,6 @@ export default function App() {
 
         const trackRect = track.getBoundingClientRect();
         const viewportHeight = window.innerHeight;
-        const viewportWidth = window.innerWidth;
         const transitionDistance = track.offsetHeight - viewportHeight;
 
         let progress = 0;
@@ -270,7 +366,7 @@ export default function App() {
           progress = Math.max(0, Math.min(1, -trackRect.top / track.offsetHeight));
         }
 
-        // Etapa 1: Apresentação suave e refinada do título no canto superior esquerdo (0 a 0.35)
+        // Etapa 1: Apresentação suave do título (0 a 0.35)
         const rawTitleProgress = Math.min(1, Math.max(0, progress / 0.35));
         const smoothTitle = rawTitleProgress * rawTitleProgress * (3 - 2 * rawTitleProgress);
 
@@ -283,7 +379,7 @@ export default function App() {
           title.style.transform = `translate3d(0, ${titleY.toFixed(2)}px, 0)`;
         }
 
-        // Etapa 2: Aparição progressiva dos cinco cards com defasagem fluida (0.35 a 0.85)
+        // Etapa 2: Aparição progressiva dos cards (0.35 a 0.85)
         const rawCardsProgress = Math.min(1, Math.max(0, (progress - 0.35) / 0.50));
 
         if (rawCardsProgress <= 0.001) {
@@ -334,7 +430,6 @@ export default function App() {
       window.addEventListener('scroll', handleScrollOrResize, { passive: true });
       window.addEventListener('resize', handleScrollOrResize, { passive: true });
 
-      // Verificação inicial caso a página recarregue com posição de rolagem prévia
       updateScrollAudio();
       updatePreservationScroll();
 
@@ -358,9 +453,13 @@ export default function App() {
     };
   }, []);
 
+  const atmosphere = isNightMode
+    ? selectedBiomeData?.atmosphereNight
+    : selectedBiomeData?.atmosphereDay;
+
   return (
-    <div className="app-layout">
-      {/* Camada do vídeo de fundo com desfoque moderado e reprodução contínua */}
+    <div className={`app-layout ${isNightMode ? 'night-mode' : 'day-mode'} biome-${selectedBiome}`}>
+      {/* Camada do vídeo de fundo com desfoque moderado */}
       <video
         ref={videoRef}
         className="forest-background"
@@ -373,17 +472,29 @@ export default function App() {
         aria-hidden="true"
       />
 
-      {/* Áudio ambiente independente em loop contínuo */}
+      {/* Camada dinâmica de atmosfera visual do bioma selecionado */}
+      <div
+        className="biome-ambient-overlay"
+        aria-hidden="true"
+        style={{
+          background: atmosphere?.ambientGradient || undefined
+        }}
+      />
+
+      {/* Camada de luz natural ou luar noturno */}
+      <div className={`daylight-overlay ${isNightMode ? 'night-overlay' : ''}`} aria-hidden="true" />
+
+      {/* Efeito de lanterna digital no modo noturno */}
+      <FlashlightOverlay isNightMode={isNightMode} />
+
+      {/* Áudio ambiente com som característico do bioma selecionado */}
       <audio
         ref={audioRef}
-        src={`${import.meta.env.BASE_URL}assets/audio/audioFlorestaDia.mp3`}
+        src={`${import.meta.env.BASE_URL}${selectedBiomeData.audioSrc}`}
         loop
         preload="auto"
         style={{ display: 'none' }}
       />
-
-      {/* Camada de atmosfera de luz natural suave */}
-      <div className="daylight-overlay" aria-hidden="true" />
 
       {/* Trilha de rolagem da transição para a página principal */}
       <div ref={heroTrackRef} className="hero-scroll-container">
@@ -392,30 +503,53 @@ export default function App() {
             <Header
               isAudioPlaying={isAudioPlaying}
               onToggleAudio={toggleAudio}
+              isNightMode={isNightMode}
+              onToggleNightMode={handleToggleNightMode}
+              onlyThreatened={onlyThreatened}
+              onToggleThreatened={handleToggleThreatened}
             />
 
             <main className="main-stage">
-              <div className="map-area">
-                <BiomeMap
-                  activeBiome={activeBiome}
-                  onHoverBiome={handleHoverBiome}
-                  onLeaveBiome={handleLeaveBiome}
-                />
-              </div>
+              <div className="stage-workspace">
+                {/* Coluna do Mapa e da Legenda */}
+                <div className="map-column">
+                  <div className="map-area">
+                    <BiomeMap
+                      selectedBiome={selectedBiome}
+                      hoveredBiome={hoveredBiome}
+                      onSelectBiome={handleSelectBiome}
+                      onHoverBiome={handleHoverBiome}
+                      onLeaveBiome={handleLeaveBiome}
+                    />
+                  </div>
 
-              <div className="legend-area">
-                <BiomeLegend
-                  activeBiome={activeBiome}
-                  onHoverBiome={handleHoverBiome}
-                  onLeaveBiome={handleLeaveBiome}
-                />
+                  <div className="legend-area">
+                    <BiomeLegend
+                      selectedBiome={selectedBiome}
+                      hoveredBiome={hoveredBiome}
+                      onSelectBiome={handleSelectBiome}
+                      onHoverBiome={handleHoverBiome}
+                      onLeaveBiome={handleLeaveBiome}
+                    />
+                  </div>
+                </div>
+
+                {/* Coluna da Galeria de Animais */}
+                <div className="gallery-column">
+                  <AnimalGallery
+                    biome={selectedBiomeData}
+                    isNightMode={isNightMode}
+                    onlyThreatened={onlyThreatened}
+                    onToggleThreatened={handleToggleThreatened}
+                  />
+                </div>
               </div>
             </main>
           </div>
         </div>
       </div>
 
-      {/* Seção de preservação dos biomas brasileiros com efeito contínuo de scroll e cards */}
+      {/* Seção de preservação dos biomas brasileiros com cards e animação de scroll */}
       <section
         ref={protectionTrackRef}
         className="protection-section"
@@ -461,7 +595,7 @@ export default function App() {
         </div>
       </section>
 
-      {/* Rodapé minimalista com rolagem natural */}
+      {/* Rodapé minimalista com links e créditos */}
       <Footer />
     </div>
   );

@@ -4,10 +4,17 @@ import { BIOMES } from '../data/biomeData';
 /**
  * Painel informativo e legenda posicionado no canto inferior esquerdo.
  * Apresenta a relação dos seis biomas brasileiros e evidencia
- * visualmente a região sob foco com nome, cor e indicador de status.
+ * visualmente a região sob foco ou selecionada com nome, cor e status.
  */
-function BiomeLegend({ activeBiome, onHoverBiome, onLeaveBiome }) {
-  const activeBiomeData = BIOMES.find((b) => b.id === activeBiome);
+function BiomeLegend({
+  selectedBiome,
+  hoveredBiome,
+  onSelectBiome,
+  onHoverBiome,
+  onLeaveBiome
+}) {
+  const activeId = hoveredBiome || selectedBiome;
+  const activeBiomeData = BIOMES.find((b) => b.id === activeId);
 
   return (
     <aside className="biome-legend" aria-label="Legenda e identificação dos biomas">
@@ -23,34 +30,33 @@ function BiomeLegend({ activeBiome, onHoverBiome, onLeaveBiome }) {
             <span className="legend-active-text">{activeBiomeData.name}</span>
           </div>
         ) : (
-          <span className="legend-hint">Explore o mapa</span>
+          <span className="legend-hint">Clique para explorar</span>
         )}
       </div>
 
       <ul className="legend-list">
         {BIOMES.map((biome) => {
-          const isActive = activeBiome === biome.id;
+          const isSelected = selectedBiome === biome.id;
+          const isHovered = hoveredBiome === biome.id;
+          const isActive = isSelected || isHovered;
+
           return (
             <li
               key={biome.id}
-              className={`legend-item ${isActive ? 'active' : ''}`}
+              className={`legend-item ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''}`}
               onMouseEnter={() => onHoverBiome(biome.id)}
               onMouseLeave={onLeaveBiome}
-              onClick={() => (isActive ? onLeaveBiome() : onHoverBiome(biome.id))}
+              onClick={() => onSelectBiome(biome.id)}
               tabIndex={0}
               role="button"
-              aria-pressed={isActive}
-              aria-label={`Bioma ${biome.name}${isActive ? ' (selecionado)' : ''}`}
+              aria-pressed={isSelected}
+              aria-label={`Bioma ${biome.name}${isSelected ? ' (selecionado)' : ''}`}
               onFocus={() => onHoverBiome(biome.id)}
               onBlur={onLeaveBiome}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
-                  if (isActive) {
-                    onLeaveBiome();
-                  } else {
-                    onHoverBiome(biome.id);
-                  }
+                  onSelectBiome(biome.id);
                 }
               }}
             >
@@ -60,6 +66,7 @@ function BiomeLegend({ activeBiome, onHoverBiome, onLeaveBiome }) {
                 aria-hidden="true"
               />
               <span className="legend-name">{biome.name}</span>
+              {isSelected && <span className="legend-selected-indicator" aria-hidden="true">✓</span>}
             </li>
           );
         })}

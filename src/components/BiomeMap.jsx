@@ -8,11 +8,20 @@ import { BIOMES, BIOME_MAP_SOURCE } from '../data/biomeData';
  * geometria, coordenadas ou limites geográficos originais.
  * Fornece interações de foco, hover suave, suporte a teclado e toque.
  */
-function BiomeMap({ activeBiome, onHoverBiome, onLeaveBiome }) {
+function BiomeMap({
+  selectedBiome,
+  hoveredBiome,
+  onSelectBiome,
+  onHoverBiome,
+  onLeaveBiome
+}) {
   const [svgContent, setSvgContent] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const containerRef = useRef(null);
+
+  // O bioma exibido ativamente é o que está em hover ou o atualmente selecionado
+  const activeBiome = hoveredBiome || selectedBiome;
 
   // Carrega o arquivo SVG oficial do IBGE 2025
   useEffect(() => {
@@ -53,39 +62,49 @@ function BiomeMap({ activeBiome, onHoverBiome, onLeaveBiome }) {
 
     const biomePaths = container.querySelectorAll('[data-bioma], path[id]');
     biomePaths.forEach((path) => {
-      const isCurrent = activeBiome && path.id === activeBiome;
+      const isSelected = selectedBiome && path.id === selectedBiome;
+      const isHovered = hoveredBiome && path.id === hoveredBiome;
+      const isCurrent = isSelected || isHovered;
       const isOther = activeBiome && path.id !== activeBiome;
 
       path.classList.toggle('destacado', Boolean(isCurrent));
-      path.classList.toggle('is-selected', Boolean(isCurrent));
+      path.classList.toggle('is-selected', Boolean(isSelected));
+      path.classList.toggle('is-hovered', Boolean(isHovered));
       path.classList.toggle('is-dimmed', Boolean(isOther));
 
-      path.setAttribute('aria-pressed', isCurrent ? 'true' : 'false');
+      path.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+      path.setAttribute('tabindex', '0');
+      path.setAttribute('role', 'button');
+      
+      const biomeInfo = BIOMES.find((b) => b.id === path.id);
+      if (biomeInfo) {
+        path.setAttribute('aria-label', `Bioma ${biomeInfo.name}${isSelected ? ' (selecionado)' : ''}`);
+      }
     });
-  }, [activeBiome, svgContent]);
+  }, [selectedBiome, hoveredBiome, activeBiome, svgContent]);
 
   // Delegação eficiente de eventos de interação sobre os biomas do SVG
   const handlePointerMove = useCallback(
     (e) => {
       const target = e.target.closest('[data-bioma], path[id]');
       if (target && target.id) {
-        if (activeBiome !== target.id) {
+        if (hoveredBiome !== target.id) {
           onHoverBiome(target.id);
         }
       } else {
-        if (activeBiome) {
+        if (hoveredBiome) {
           onLeaveBiome();
         }
       }
     },
-    [activeBiome, onHoverBiome, onLeaveBiome]
+    [hoveredBiome, onHoverBiome, onLeaveBiome]
   );
 
   const handlePointerLeave = useCallback(() => {
-    if (activeBiome) {
+    if (hoveredBiome) {
       onLeaveBiome();
     }
-  }, [activeBiome, onLeaveBiome]);
+  }, [hoveredBiome, onLeaveBiome]);
 
   const handleFocus = useCallback(
     (e) => {
@@ -112,32 +131,21 @@ function BiomeMap({ activeBiome, onHoverBiome, onLeaveBiome }) {
         const target = e.target.closest('[data-bioma], path[id]');
         if (target && target.id) {
           e.preventDefault();
-          if (activeBiome === target.id) {
-            onLeaveBiome();
-          } else {
-            onHoverBiome(target.id);
-          }
+          onSelectBiome(target.id);
         }
       }
     },
-    [activeBiome, onHoverBiome, onLeaveBiome]
+    [onSelectBiome]
   );
 
   const handleClick = useCallback(
     (e) => {
       const target = e.target.closest('[data-bioma], path[id]');
       if (target && target.id) {
-        // Alternância em toque/clique: desseleciona se já estiver ativo
-        if (activeBiome === target.id) {
-          onLeaveBiome();
-        } else {
-          onHoverBiome(target.id);
-        }
-      } else {
-        onLeaveBiome();
+        onSelectBiome(target.id);
       }
     },
-    [activeBiome, onHoverBiome, onLeaveBiome]
+    [onSelectBiome]
   );
 
   const activeBiomeData = BIOMES.find((b) => b.id === activeBiome);
