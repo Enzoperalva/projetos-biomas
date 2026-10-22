@@ -1,12 +1,16 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { BIOMES, BIOME_MAP_SOURCE } from '../data/biomeData';
 
+// Cache do SVG oficial em memória de módulo para evitar re-fetches e parsing repetido
+let cachedSvgContent = null;
+
 /**
  * Componente do Mapa dos Biomas Brasileiros.
  * Carrega a base cartográfica oficial do IBGE 2025 diretamente de
  * public/assets/biomes/biomas_brasil_ibge_2025.svg sem modificar
  * geometria, coordenadas ou limites geográficos originais.
- * Fornece interações de foco, hover suave, suporte a teclado e toque.
+ * Altamente otimizado com cache de nós DOM, delegação estabilizada de ponteiro
+ * e sincronização de atributos sem seletores repetitivos.
  */
 function BiomeMap({
   selectedBiome,
@@ -15,20 +19,32 @@ function BiomeMap({
   onHoverBiome,
   onLeaveBiome
 }) {
-  const [svgContent, setSvgContent] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [svgContent, setSvgContent] = useState(() => cachedSvgContent || '');
+  const [loading, setLoading] = useState(() => !cachedSvgContent);
   const [error, setError] = useState(null);
-  const containerRef = useRef(null);
 
-  // O bioma exibido ativamente é o que está em hover ou o atualmente selecionado
+  const containerRef = useRef(null);
+  const pathsMapRef = useRef(null);
+  const prevSelectedRef = useRef(null);
+  const hoveredRef = useRef(hoveredBiome);
+  hoveredRef.current = hoveredBiome;
+
+  // O bioma exibido ativamente é o que está sob foco/hover ou o selecionado
   const activeBiome = hoveredBiome || selectedBiome;
 
-  // Carrega o arquivo SVG oficial do IBGE 2025
+  // Carrega o arquivo SVG oficial do IBGE 2025 com cache em memória
   useEffect(() => {
+    if (cachedSvgContent) {
+      if (svgContent !== cachedSvgContent) {
+        setSvgContent(cachedSvgContent);
+        setLoading(false);
+      }
+      return;
+    }
+
     let isMounted = true;
     const svgUrl = `${import.meta.env.BASE_URL}${BIOME_MAP_SOURCE}`;
 
-    setLoading(true);
     fetch(svgUrl)
       .then((res) => {
         if (!res.ok) {
@@ -37,6 +53,7 @@ function BiomeMap({
         return res.text();
       })
       .then((text) => {
+        cachedSvgContent = text;
         if (isMounted) {
           setSvgContent(text);
           setLoading(false);
@@ -53,63 +70,97 @@ function BiomeMap({
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [svgContent]);
 
-  // Sincroniza classes e atributos de acessibilidade nos elementos do SVG
+  // Indexação inicial única dos elementos dos biomas após inserção do SVG
   useEffect(() => {
     const container = containerRef.current;
-    if (!container) return;
+    if (!container || !svgContent) return;
 
-    const biomePaths = container.querySelectorAll('[data-bioma], path[id]');
-    biomePaths.forEach((path) => {
-      const isSelected = selectedBiome && path.id === selectedBiome;
-      const isHovered = hoveredBiome && path.id === hoveredBiome;
-      const isCurrent = isSelected || isHovered;
-      const isOther = activeBiome && path.id !== activeBiome;
+    const paths = container.querySelectorAll('[data-bioma], path[id]');
+    const map = {};
 
-      path.classList.toggle('destacado', Boolean(isCurrent));
-      path.classList.toggle('is-selected', Boolean(isSelected));
-      path.classList.toggle('is-hovered', Boolean(isHovered));
-      path.classList.toggle('is-dimmed', Boolean(isOther));
-
-      path.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+    paths.forEach((path) => {
+      map[path.id] = path;
       path.setAttribute('tabindex', '0');
       path.setAttribute('role', 'button');
-      
+
+      const isSelected = selectedBiome && path.id === selectedBiome;
       const biomeInfo = BIOMES.find((b) => b.id === path.id);
       if (biomeInfo) {
-        path.setAttribute('aria-label', `Bioma ${biomeInfo.name}${isSelected ? ' (selecionado)' : ''}`);
+        path.setAttribute(
+          'aria-label',
+          `Bioma ${biomeInfo.name}${isSelected ? ' (selecionado)' : ''}`
+        );
       }
+      path.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
     });
-  }, [selectedBiome, hoveredBiome, activeBiome, svgContent]);
 
-  // Delegação eficiente de eventos de interação sobre os biomas do SVG
+    pathsMapRef.current = map;
+  }, [svgContent]);
+
+  // Sincronização direta e ultrarrápida das classes e acessibilidade dos 6 biomas
+  useEffect(() => {
+    const pathsMap = pathsMapRef.current;
+    if (!pathsMap) return;
+
+    for (const id in pathsMap) {
+      const path = pathsMap[id];
+      const isSelected = selectedBiome === id;
+      const isHovered = hoveredBiome === id;
+      const isCurrent = isSelected || isHovered;
+      const isOther = activeBiome && id !== activeBiome;
+
+      path.classList.toggle('destacado', isCurrent);
+      path.classList.toggle('is-selected', isSelected);
+      path.classList.toggle('is-hovered', isHovered);
+      path.classList.toggle('is-dimmed', isOther);
+
+      path.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+
+      // Atualiza aria-label somente se o estado de seleção mudou
+      if (prevSelectedRef.current !== selectedBiome) {
+        const biomeInfo = BIOMES.find((b) => b.id === id);
+        if (biomeInfo) {
+          path.setAttribute(
+            'aria-label',
+            `Bioma ${biomeInfo.name}${isSelected ? ' (selecionado)' : ''}`
+          );
+        }
+      }
+    }
+
+    prevSelectedRef.current = selectedBiome;
+  }, [selectedBiome, hoveredBiome, activeBiome]);
+
+  // Manipulador de ponteiro estabilizado com curto-circuito para movimentos internos
   const handlePointerMove = useCallback(
     (e) => {
       const target = e.target.closest('[data-bioma], path[id]');
-      if (target && target.id) {
-        if (hoveredBiome !== target.id) {
-          onHoverBiome(target.id);
-        }
-      } else {
-        if (hoveredBiome) {
-          onLeaveBiome();
-        }
+      const targetId = target ? target.id : null;
+
+      // Se o cursor estiver se movendo dentro do mesmo bioma, retorna imediatamente
+      if (hoveredRef.current === targetId) return;
+
+      if (targetId) {
+        onHoverBiome(targetId);
+      } else if (hoveredRef.current) {
+        onLeaveBiome();
       }
     },
-    [hoveredBiome, onHoverBiome, onLeaveBiome]
+    [onHoverBiome, onLeaveBiome]
   );
 
   const handlePointerLeave = useCallback(() => {
-    if (hoveredBiome) {
+    if (hoveredRef.current) {
       onLeaveBiome();
     }
-  }, [hoveredBiome, onLeaveBiome]);
+  }, [onLeaveBiome]);
 
   const handleFocus = useCallback(
     (e) => {
       const target = e.target.closest('[data-bioma], path[id]');
-      if (target && target.id) {
+      if (target && target.id && hoveredRef.current !== target.id) {
         onHoverBiome(target.id);
       }
     },

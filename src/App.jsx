@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import Header from './components/Header';
-import BiomeMap from './components/BiomeMap';
-import BiomeLegend from './components/BiomeLegend';
+import MapColumn from './components/MapColumn';
 import AnimalGallery from './components/AnimalGallery';
 import FlashlightOverlay from './components/FlashlightOverlay';
+import PreservationSection from './components/PreservationSection';
 import Footer from './components/Footer';
 import { BIOMES } from './data/biomeData';
-import { PRESERVATION_CARDS } from './data/preservationData';
 import './App.css';
 
 const BASE_VOLUME = 0.55;
@@ -16,11 +15,11 @@ const BASE_VOLUME = 0.55;
  * Experiência interativa e imersiva com seleção de biomas, galeria de fauna diurna e noturna,
  * áudio ambiente independente por bioma com transição suave, modo Dia/Noite com lanterna digital,
  * filtro de espécies ameaçadas de extinção e transição contínua para a seção de preservação.
+ * Arquitetura de alto desempenho com isolamento de escopo para cliques e hovers.
  */
 export default function App() {
-  // Estado do bioma selecionado (padrão: Amazônia) e sob hover
+  // Estado do bioma selecionado (padrão: Amazônia)
   const [selectedBiome, setSelectedBiome] = useState('amazonia');
-  const [hoveredBiome, setHoveredBiome] = useState(null);
 
   // Estados dos modos e filtros
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
@@ -136,14 +135,6 @@ export default function App() {
     },
     [changeBiomeAudio]
   );
-
-  const handleHoverBiome = useCallback((id) => {
-    setHoveredBiome(id);
-  }, []);
-
-  const handleLeaveBiome = useCallback(() => {
-    setHoveredBiome(null);
-  }, []);
 
   // Alterna Modo Dia / Modo Noite
   const handleToggleNightMode = useCallback(() => {
@@ -331,7 +322,9 @@ export default function App() {
         }
       };
 
-      // Sincronização contínua e reversível da seção de preservação
+      // Sincronização contínua e reversível da seção de preservação com memoização de limites
+      let lastPreservationProgress = -1;
+
       const updatePreservationScroll = () => {
         const track = protectionTrackRef.current;
         const title = protectionTitleRef.current;
@@ -341,6 +334,8 @@ export default function App() {
         if (!track || !title || !cardsWrapper) return;
 
         if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || window.innerWidth <= 768) {
+          if (lastPreservationProgress === -2) return;
+          lastPreservationProgress = -2;
           title.style.transform = '';
           title.style.opacity = '1';
           cardsWrapper.style.opacity = '1';
@@ -366,6 +361,11 @@ export default function App() {
         } else if (track.offsetHeight > 0) {
           progress = Math.max(0, Math.min(1, -trackRect.top / track.offsetHeight));
         }
+
+        // Se o progresso permaneceu no limite estático (fora da seção), evita mutações repetidas de DOM
+        if (progress <= 0.0001 && lastPreservationProgress <= 0.0001 && lastPreservationProgress !== -1) return;
+        if (progress >= 0.9999 && lastPreservationProgress >= 0.9999) return;
+        lastPreservationProgress = progress;
 
         // Etapa 1: Apresentação suave do título (0 a 0.35)
         const rawTitleProgress = Math.min(1, Math.max(0, progress / 0.35));
@@ -460,11 +460,12 @@ export default function App() {
 
   return (
     <div className={`app-layout ${isNightMode ? 'night-mode' : 'day-mode'} biome-${selectedBiome}`}>
-      {/* Camada do vídeo de fundo com desfoque moderado */}
+      {/* Camada do vídeo de fundo com desfoque moderado e hardware-accelerated */}
       <video
         ref={videoRef}
         className="forest-background"
         src={`${import.meta.env.BASE_URL}assets/biomes/videoFlorestaDia.mp4`}
+        poster={`${import.meta.env.BASE_URL}assets/biomes/floresta-amazonica-dia.jpg`}
         autoPlay
         loop
         muted
@@ -512,28 +513,11 @@ export default function App() {
 
             <main className="main-stage">
               <div className="stage-workspace">
-                {/* Coluna do Mapa e da Legenda */}
-                <div className="map-column">
-                  <div className="map-area">
-                    <BiomeMap
-                      selectedBiome={selectedBiome}
-                      hoveredBiome={hoveredBiome}
-                      onSelectBiome={handleSelectBiome}
-                      onHoverBiome={handleHoverBiome}
-                      onLeaveBiome={handleLeaveBiome}
-                    />
-                  </div>
-
-                  <div className="legend-area">
-                    <BiomeLegend
-                      selectedBiome={selectedBiome}
-                      hoveredBiome={hoveredBiome}
-                      onSelectBiome={handleSelectBiome}
-                      onHoverBiome={handleHoverBiome}
-                      onLeaveBiome={handleLeaveBiome}
-                    />
-                  </div>
-                </div>
+                {/* Coluna do Mapa e da Legenda com hover isolado */}
+                <MapColumn
+                  selectedBiome={selectedBiome}
+                  onSelectBiome={handleSelectBiome}
+                />
 
                 {/* Coluna da Galeria de Animais */}
                 <div className="gallery-column">
@@ -551,50 +535,15 @@ export default function App() {
       </div>
 
       {/* Seção de preservação dos biomas brasileiros com cards e animação de scroll */}
-      <section
+      <PreservationSection
         ref={protectionTrackRef}
-        className="protection-section"
-        aria-label="Proteção dos Biomas"
-      >
-        <div ref={protectionStickyRef} className="protection-sticky-frame">
-          <div ref={protectionStageRef} className="protection-stage">
-            <header ref={protectionHeaderRef} className="protection-header">
-              <h2 ref={protectionTitleRef} className="protection-title">
-                O que podemos fazer para proteger os biomas brasileiros?
-              </h2>
-            </header>
-
-            <div ref={protectionCardsWrapperRef} className="protection-cards-wrapper">
-              <div className="protection-cards-grid">
-                {PRESERVATION_CARDS.map((card, index) => (
-                  <article
-                    key={card.id}
-                    ref={(el) => {
-                      protectionCardsListRef.current[index] = el;
-                    }}
-                    className="protection-card"
-                  >
-                    <div className="card-top-strip" aria-hidden="true" />
-                    <div className="card-body">
-                      <div className="card-icon-container">
-                        <img
-                          src={card.icon}
-                          alt=""
-                          className="card-icon-img"
-                          loading="lazy"
-                          aria-hidden="true"
-                        />
-                      </div>
-                      <h3 className="card-title">{card.title}</h3>
-                      <p className="card-description">{card.description}</p>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+        stickyRef={protectionStickyRef}
+        stageRef={protectionStageRef}
+        headerRef={protectionHeaderRef}
+        titleRef={protectionTitleRef}
+        cardsWrapperRef={protectionCardsWrapperRef}
+        cardsListRef={protectionCardsListRef}
+      />
 
       {/* Rodapé minimalista com links e créditos */}
       <Footer />

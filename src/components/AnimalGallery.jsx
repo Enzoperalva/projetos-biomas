@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import AnimalCard from './AnimalCard';
 import { filterAnimals } from '../data/animalsData';
 
 /**
  * Painel da Galeria de Animais do Bioma selecionado.
  * Permite explorar a fauna diurna/noturna e aplicar o filtro de espécies ameaçadas de extinção.
+ * Otimizado com memoização dos filtros para evitar re-computações desnecessárias.
  */
 function AnimalGallery({
   biome,
@@ -15,11 +16,13 @@ function AnimalGallery({
 }) {
   if (!biome) return null;
 
-  const filteredAnimals = filterAnimals({
-    biomeId: biome.id,
-    isNightMode,
-    onlyThreatened
-  });
+  const filteredAnimals = useMemo(() => {
+    return filterAnimals({
+      biomeId: biome.id,
+      isNightMode,
+      onlyThreatened
+    });
+  }, [biome.id, isNightMode, onlyThreatened]);
 
   const atmosphere = isNightMode ? biome.atmosphereNight : biome.atmosphereDay;
 

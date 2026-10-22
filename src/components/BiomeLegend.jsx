@@ -1,5 +1,54 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { BIOMES } from '../data/biomeData';
+
+/**
+ * Item individual da legenda dos biomas.
+ * Memoizado para evitar re-criação de nós virtuais quando outros itens mudam.
+ */
+const LegendItem = React.memo(function LegendItem({
+  biome,
+  isSelected,
+  isActive,
+  onSelectBiome,
+  onHoverBiome,
+  onLeaveBiome
+}) {
+  const handleMouseEnter = useCallback(() => onHoverBiome(biome.id), [biome.id, onHoverBiome]);
+  const handleClick = useCallback(() => onSelectBiome(biome.id), [biome.id, onSelectBiome]);
+  const handleKeyDown = useCallback(
+    (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        onSelectBiome(biome.id);
+      }
+    },
+    [biome.id, onSelectBiome]
+  );
+
+  return (
+    <li
+      className={`legend-item ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''}`}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={onLeaveBiome}
+      onClick={handleClick}
+      tabIndex={0}
+      role="button"
+      aria-pressed={isSelected}
+      aria-label={`Bioma ${biome.name}${isSelected ? ' (selecionado)' : ''}`}
+      onFocus={handleMouseEnter}
+      onBlur={onLeaveBiome}
+      onKeyDown={handleKeyDown}
+    >
+      <span
+        className="legend-color-dot"
+        style={{ backgroundColor: biome.color }}
+        aria-hidden="true"
+      />
+      <span className="legend-name">{biome.name}</span>
+      {isSelected && <span className="legend-selected-indicator" aria-hidden="true">✓</span>}
+    </li>
+  );
+});
 
 /**
  * Painel informativo e legenda posicionado no canto inferior esquerdo.
@@ -41,33 +90,15 @@ function BiomeLegend({
           const isActive = isSelected || isHovered;
 
           return (
-            <li
+            <LegendItem
               key={biome.id}
-              className={`legend-item ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''}`}
-              onMouseEnter={() => onHoverBiome(biome.id)}
-              onMouseLeave={onLeaveBiome}
-              onClick={() => onSelectBiome(biome.id)}
-              tabIndex={0}
-              role="button"
-              aria-pressed={isSelected}
-              aria-label={`Bioma ${biome.name}${isSelected ? ' (selecionado)' : ''}`}
-              onFocus={() => onHoverBiome(biome.id)}
-              onBlur={onLeaveBiome}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  onSelectBiome(biome.id);
-                }
-              }}
-            >
-              <span
-                className="legend-color-dot"
-                style={{ backgroundColor: biome.color }}
-                aria-hidden="true"
-              />
-              <span className="legend-name">{biome.name}</span>
-              {isSelected && <span className="legend-selected-indicator" aria-hidden="true">✓</span>}
-            </li>
+              biome={biome}
+              isSelected={isSelected}
+              isActive={isActive}
+              onSelectBiome={onSelectBiome}
+              onHoverBiome={onHoverBiome}
+              onLeaveBiome={onLeaveBiome}
+            />
           );
         })}
       </ul>

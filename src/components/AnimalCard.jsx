@@ -46,6 +46,7 @@ function AnimalCard({ animal, isNightMode }) {
             alt={`Fotografia de ${animal.name} (${animal.scientificName}) em seu habitat natural`}
             className={`animal-image ${imageLoaded ? 'loaded' : ''}`}
             loading="lazy"
+            decoding="async"
             onLoad={() => setImageLoaded(true)}
             onError={() => setImageError(true)}
           />
